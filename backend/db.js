@@ -1,9 +1,9 @@
 const mysql = require('mysql2');
 
 const db = mysql.createConnection({
-  host:     'localhost',
-  user:     'root',
-  password: '',        // tu password de MySQL
+  host: 'localhost',
+  user: 'root',
+  password: '',
   database: 'clubmanager'
 });
 

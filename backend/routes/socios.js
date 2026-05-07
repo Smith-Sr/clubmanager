@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
 
-// GET /api/socios
 router.get('/', (req, res) => {
   db.query('SELECT * FROM socios WHERE estado = "activo"', (err, rows) => {
     if (err) return res.status(500).json({ error: err.message });
@@ -9,7 +8,6 @@ router.get('/', (req, res) => {
   });
 });
 
-// POST /api/socios
 router.post('/', (req, res) => {
   const { nombre, dni, email, telefono, tipo_membresia, fecha_vencimiento } = req.body;
   const sql = `INSERT INTO socios (nombre, dni, email, telefono, tipo_membresia, fecha_vencimiento)

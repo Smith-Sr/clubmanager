@@ -1,7 +1,6 @@
 const router = require('express').Router();
 const db = require('../db');
 
-// GET /api/reservas  (las de hoy)
 router.get('/', (req, res) => {
   const sql = `
     SELECT r.*, s.nombre AS socio, i.nombre AS instalacion
@@ -17,7 +16,6 @@ router.get('/', (req, res) => {
   });
 });
 
-// POST /api/reservas
 router.post('/', (req, res) => {
   const { socio_id, instalacion_id, fecha, hora_inicio, hora_fin } = req.body;
   const sql = `INSERT INTO reservas (socio_id, instalacion_id, fecha, hora_inicio, hora_fin)
@@ -28,7 +26,6 @@ router.post('/', (req, res) => {
   });
 });
 
-// DELETE /api/reservas/:id
 router.delete('/:id', (req, res) => {
   db.query('UPDATE reservas SET estado="cancelada" WHERE id=?', [req.params.id], (err) => {
     if (err) return res.status(500).json({ error: err.message });
