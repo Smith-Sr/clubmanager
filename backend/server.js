@@ -13,3 +13,4 @@ app.use('/api/auth',          require('./routes/auth'));
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`Servidor en http://localhost:${PORT}`));
+app.use('/api/trabajadores', require('./routes/trabajadores'));
