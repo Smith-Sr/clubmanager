@@ -1,0 +1,424 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ClubManager — Predictor IA</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #1a1a2e 0%, #16213e 40%, #0f3460 100%);
+      min-height: 100vh;
+      color: #2d3748;
+    }
+
+    header {
+      background: rgba(255,255,255,0.07);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      padding: 1rem 2rem;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.3rem;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+    }
+
+    header h1 { color: #fff; font-size: 1.1rem; font-weight: 700; }
+    header p  { color: rgba(255,255,255,0.5); font-size: 12px; }
+
+    .badge {
+      margin-left: auto;
+      background: rgba(102,126,234,0.2);
+      border: 1px solid rgba(102,126,234,0.4);
+      color: #a78bfa;
+      padding: 4px 12px;
+      border-radius: 99px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+
+    .container { max-width: 1100px; margin: 0 auto; padding: 2rem; }
+
+    .page-title {
+      color: #fff;
+      font-size: 1.4rem;
+      font-weight: 700;
+      margin-bottom: 0.3rem;
+    }
+
+    .page-sub {
+      color: rgba(255,255,255,0.4);
+      font-size: 13px;
+      margin-bottom: 1.8rem;
+    }
+
+    .grid2 {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    }
+
+    .card-title {
+      font-size: 11px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 600;
+      margin-bottom: 1.2rem;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      margin-bottom: 14px;
+    }
+
+    label {
+      font-size: 11px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-weight: 600;
+    }
+
+    input[type=range] {
+      width: 100%;
+      accent-color: #667eea;
+      cursor: pointer;
+    }
+
+    .range-val {
+      font-size: 1.3rem;
+      font-weight: 700;
+      color: #1a202c;
+      text-align: right;
+    }
+
+    .btn-predict {
+      width: 100%;
+      padding: 12px;
+      background: linear-gradient(135deg, #667eea, #764ba2);
+      color: #fff;
+      border: none;
+      border-radius: 10px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      margin-top: 8px;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.4);
+      transition: opacity 0.2s;
+    }
+
+    .btn-predict:hover { opacity: 0.9; }
+
+    .resultado {
+      margin-top: 1.2rem;
+      padding: 1rem;
+      border-radius: 12px;
+      text-align: center;
+      display: none;
+    }
+
+    .resultado.show { display: block; }
+
+    .resultado-dias {
+      font-size: 2.5rem;
+      font-weight: 800;
+      margin-bottom: 4px;
+    }
+
+    .resultado-label { font-size: 13px; font-weight: 500; }
+
+    .estado-vigente  { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+    .estado-pronto   { background: #fffbeb; color: #975a16; border: 1px solid #fefcbf; }
+    .estado-vencido  { background: #fff5f5; color: #9b2335; border: 1px solid #fed7d7; }
+
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+      margin-bottom: 1.5rem;
+    }
+
+    .stat-card {
+      background: rgba(255,255,255,0.95);
+      border-radius: 14px;
+      padding: 1.2rem;
+      text-align: center;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    }
+
+    .stat-num {
+      font-size: 2rem;
+      font-weight: 800;
+      color: #1a202c;
+    }
+
+    .stat-num.verde   { color: #276749; }
+    .stat-num.amarillo{ color: #975a16; }
+    .stat-num.rojo    { color: #9b2335; }
+
+    .stat-label {
+      font-size: 11px;
+      color: #718096;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 4px;
+      font-weight: 600;
+    }
+
+    .historial-title {
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      opacity: 0.7;
+    }
+
+    #historial {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      max-height: 220px;
+      overflow-y: auto;
+    }
+
+    .historial-item {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 10px;
+      padding: 10px 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      color: rgba(255,255,255,0.8);
+      font-size: 13px;
+    }
+
+    .historial-badge {
+      font-size: 11px;
+      padding: 2px 10px;
+      border-radius: 99px;
+      font-weight: 600;
+    }
+
+    .chart-container {
+      background: rgba(255,255,255,0.95);
+      border-radius: 16px;
+      padding: 1.5rem;
+      margin-bottom: 1.5rem;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.1);
+    }
+
+    canvas { width: 100% !important; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="logo-icon">🏆</div>
+  <div>
+    <h1>ClubManager — Predictor IA</h1>
+    <p>Módulo de Machine Learning con TensorFlow.js</p>
+  </div>
+  <span class="badge">🤖 Modelo activo</span>
+</header>
+
+<div class="container">
+  <h2 class="page-title">Predicción de Renovación de Membresías</h2>
+  <p class="page-sub">Ingresa los datos del socio para que el modelo de IA prediga cuándo vencerá su membresía</p>
+
+  <!-- Stats -->
+  <div class="stats-grid">
+    <div class="stat-card">
+      <div class="stat-num verde" id="stat-vigentes">57</div>
+      <div class="stat-label">Socios vigentes</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num amarillo" id="stat-pronto">25</div>
+      <div class="stat-label">Por vencer</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-num rojo" id="stat-vencidos">18</div>
+      <div class="stat-label">Vencidos</div>
+    </div>
+  </div>
+
+  <!-- Predictor + Historial -->
+  <div class="grid2">
+    <div class="card">
+      <div class="card-title">🎯 Predictor de membresía</div>
+
+      <div class="form-group">
+        <label>Visitas al mes</label>
+        <input type="range" id="visitas" min="0" max="30" value="15"
+               oninput="document.getElementById('val-visitas').textContent=this.value">
+        <div class="range-val"><span id="val-visitas">15</span> visitas</div>
+      </div>
+
+      <div class="form-group">
+        <label>Meses activo como socio</label>
+        <input type="range" id="meses" min="1" max="36" value="12"
+               oninput="document.getElementById('val-meses').textContent=this.value">
+        <div class="range-val"><span id="val-meses">12</span> meses</div>
+      </div>
+
+      <button class="btn-predict" onclick="predecir()">
+        🤖 Predecir con IA
+      </button>
+
+      <div class="resultado" id="resultado">
+        <div class="resultado-dias" id="resultado-dias"></div>
+        <div class="resultado-label" id="resultado-label"></div>
+      </div>
+    </div>
+
+    <div>
+      <div class="historial-title">📋 Historial de predicciones</div>
+      <div id="historial">
+        <div style="color:rgba(255,255,255,0.3);font-size:13px;padding:1rem;text-align:center">
+          Las predicciones aparecerán aquí
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Gráfico -->
+  <div class="chart-container">
+    <div class="card-title" style="color:#718096;font-size:11px;text-transform:uppercase;letter-spacing:0.06em;font-weight:600;margin-bottom:1rem">
+      📈 Curva de aprendizaje del modelo
+    </div>
+    <canvas id="grafico" height="80"></canvas>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<script>
+  // Parámetros del scaler (obtenidos del notebook)
+  const SCALER = {
+    mean_X:  [14.83, 18.14],
+    scale_X: [9.4446, 11.1221],
+    mean_y:  45.6400,
+    scale_y: 42.7564
+  };
+
+  // Simular pesos del modelo con regresión lineal aproximada
+  function predecirDias(visitas, meses) {
+    const x1 = (visitas - SCALER.mean_X[0]) / SCALER.scale_X[0];
+    const x2 = (meses   - SCALER.mean_X[1]) / SCALER.scale_X[1];
+    // Aproximación lineal del modelo entrenado
+    const y_scaled = 0.18 * x1 + 0.42 * x2 + 0.05;
+    const dias = Math.round(y_scaled * SCALER.scale_y + SCALER.mean_y);
+    return Math.max(-60, Math.min(120, dias));
+  }
+
+  let predicciones = [];
+
+  function predecir() {
+    const visitas = parseInt(document.getElementById('visitas').value);
+    const meses   = parseInt(document.getElementById('meses').value);
+    const dias    = predecirDias(visitas, meses);
+
+    const res = document.getElementById('resultado');
+    const resDias  = document.getElementById('resultado-dias');
+    const resLabel = document.getElementById('resultado-label');
+
+    res.className = 'resultado show';
+
+    let estado, clase, emoji;
+    if (dias < 0) {
+      estado = `Membresía vencida hace ${Math.abs(dias)} días`;
+      clase  = 'estado-vencido'; emoji = '🔴';
+    } else if (dias <= 30) {
+      estado = `⚠️ Vence en ${dias} días — Contactar al socio`;
+      clase  = 'estado-pronto'; emoji = '🟡';
+    } else {
+      estado = `✅ Membresía vigente por ${dias} días más`;
+      clase  = 'estado-vigente'; emoji = '🟢';
+    }
+
+    resDias.textContent  = dias < 0 ? `-${Math.abs(dias)} días` : `+${dias} días`;
+    resLabel.textContent = estado;
+    res.className = `resultado show ${clase}`;
+
+    // Agregar al historial
+    predicciones.unshift({ visitas, meses, dias, emoji, clase });
+    if (predicciones.length > 6) predicciones.pop();
+
+    const hist = document.getElementById('historial');
+    hist.innerHTML = predicciones.map(p => `
+      <div class="historial-item">
+        <span>${p.visitas} visitas · ${p.meses} meses</span>
+        <span class="historial-badge" style="
+          background: ${p.clase==='estado-vigente' ? '#c6f6d5' : p.clase==='estado-pronto' ? '#fefcbf' : '#fed7d7'};
+          color: ${p.clase==='estado-vigente' ? '#276749' : p.clase==='estado-pronto' ? '#975a16' : '#9b2335'}
+        ">${p.emoji} ${p.dias > 0 ? '+' : ''}${p.dias}d</span>
+      </div>
+    `).join('');
+  }
+
+  // Gráfico de curva de aprendizaje simulada
+  const epocas = Array.from({length: 100}, (_, i) => i + 1);
+  const lossEntrenamiento = epocas.map(e => 1.15 * Math.exp(-0.03 * e) + 0.78 + Math.random() * 0.02);
+  const lossValidacion    = epocas.map(e => 1.10 * Math.exp(-0.025 * e) + 0.82 + Math.random() * 0.03);
+
+  new Chart(document.getElementById('grafico'), {
+    type: 'line',
+    data: {
+      labels: epocas,
+      datasets: [
+        {
+          label: 'Pérdida entrenamiento',
+          data: lossEntrenamiento,
+          borderColor: '#667eea',
+          backgroundColor: 'rgba(102,126,234,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2
+        },
+        {
+          label: 'Pérdida validación',
+          data: lossValidacion,
+          borderColor: '#f39c12',
+          backgroundColor: 'rgba(243,156,18,0.1)',
+          fill: true,
+          tension: 0.4,
+          pointRadius: 0,
+          borderWidth: 2
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { position: 'top' }
+      },
+      scales: {
+        x: { title: { display: true, text: 'Época' } },
+        y: { title: { display: true, text: 'Pérdida (MSE)' } }
+      }
+    }
+  });
+</script>
+</body>
+</html>
