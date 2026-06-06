@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>ClubManager — Control de Acceso</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f8f8f7;
+  --surface:#ffffff;
+  --border:#e5e5e3;
+  --border2:#d0d0cc;
+  --text:#1a1a18;
+  --muted:#6b6b68;
+  --hint:#a0a09c;
+  --green:#1a7a4a;
+  --green-bg:#edf7f2;
+  --green-bd:#b8ddc9;
+  --amber:#8a5f00;
+  --amber-bg:#fdf6e3;
+  --amber-bd:#e8d08a;
+  --red:#a32020;
+  --red-bg:#fdf0f0;
+  --red-bd:#e8b8b8;
+  --blue:#1a4fa0;
+  --blue-bg:#eef3fc;
+  --blue-bd:#bad0f0;
+  --font:'Inter',sans-serif;
+  --mono:'IBM Plex Mono',monospace;
+}
+body{font-family:var(--font);background:var(--bg);color:var(--text);min-height:100vh;font-size:13px}
+
+/* HEADER */
+.hdr{
+  display:flex;align-items:center;gap:12px;
+  padding:0 20px;height:48px;
+  background:var(--surface);border-bottom:1px solid var(--border);
+  position:sticky;top:0;z-index:100;
+}
+.hdr-logo{font-weight:600;font-size:14px;letter-spacing:-0.01em}
+.hdr-sep{width:1px;height:16px;background:var(--border2)}
+.hdr-sub{font-size:11px;color:var(--muted);font-family:var(--mono)}
+.hdr-right{margin-left:auto;display:flex;align-items:center;gap:10px}
+.pill{
+  display:inline-flex;align-items:center;gap:5px;
+  font-size:11px;font-family:var(--mono);
+  padding:3px 8px;border-radius:4px;border:1px solid var(--border2);
+  color:var(--muted);background:var(--surface);
+}
+.pill.on{border-color:var(--green-bd);color:var(--green);background:var(--green-bg)}
+.dot{width:5px;height:5px;border-radius:50%;background:currentColor}
+.hdr-clock{font-family:var(--mono);font-size:12px;color:var(--text)}
+
+/* LAYOUT */
+.layout{
+  display:grid;
+  grid-template-columns:220px 1fr 260px;
+  height:calc(100vh - 48px);
+}
+
+/* COLUMNAS */
+.col-left{
+  border-right:1px solid var(--border);
+  background:var(--surface);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+.col-center{
+  display:flex;flex-direction:column;overflow:hidden;
+  background:var(--bg);
+}
+.col-right{
+  border-left:1px solid var(--border);
+  background:var(--surface);
+  display:flex;flex-direction:column;overflow:hidden;
+}
+
+/* SECCIÓN */
+.sec{padding:14px 16px;border-bottom:1px solid var(--border)}
+.sec-title{
+  font-size:10px;font-weight:500;letter-spacing:0.08em;text-transform:uppercase;
+  color:var(--hint);margin-bottom:10px
+}
+
+/* STATS GRANDES */
+.stat-big{padding:12px 16px;border-bottom:1px solid var(--border)}
+.stat-big-num{font-size:28px;font-weight:300;letter-spacing:-0.02em;line-height:1}
+.stat-big-lbl{font-size:10px;color:var(--muted);margin-top:3px;text-transform:uppercase;letter-spacing:0.07em}
+.stat-big-num.green{color:var(--green)}
+.stat-big-num.amber{color:var(--amber)}
+.stat-big-num.red{color:var(--red)}
+.stat-big-num.blue{color:var(--blue)}
+
+/* BARRA DE TASA */
+.rate-row{display:flex;align-items:center;gap:6px;margin-top:6px}
+.rate-bar-wrap{flex:1;height:2px;background:var(--border);border-radius:99px;overflow:hidden}
+.rate-bar{height:100%;border-radius:99px;transition:width .3s}
+.rate-num{font-size:10px;font-family:var(--mono);color:var(--muted);min-width:28px;text-align:right}
+
+/* CÁMARA */
+.cam-header{
+  padding:10px 14px;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:8px;
+  background:var(--surface);
+}
+.cam-lbl-txt{font-size:10px;font-family:var(--mono);color:var(--muted)}
+.cam-status-lbl{margin-left:auto;font-size:10px;font-family:var(--mono)}
+.cam-status-lbl.on{color:var(--green)}
+.cam-status-lbl.off{color:var(--hint)}
+
+.cam-wrap{
+  position:relative;
+  width:100%;aspect-ratio:4/3;max-height:220px;
+  background:#111;overflow:hidden;
+  display:flex;align-items:center;justify-content:center;
+}
+#webcam-container{width:100%;height:100%;display:flex;align-items:center;justify-content:center}
+#webcam-container canvas{width:100%!important;height:100%!important;object-fit:cover}
+.cam-ghost-txt{font-family:var(--mono);font-size:10px;color:#555;text-align:center}
+.cam-ghost-icon{font-size:18px;color:#333;margin-bottom:6px;display:block}
+
+/* LÍNEA DE ESCANEO */
+.scan-ln{
+  position:absolute;left:0;right:0;height:1px;
+  background:rgba(255,255,255,0.3);
+  display:none;pointer-events:none;
+}
+.scan-ln.active{display:block;animation:scan 2.8s linear infinite}
+@keyframes scan{0%{top:0}100%{top:100%}}
+
+/* OVERLAY DE RESULTADO */
+.result-ov{
+  position:absolute;inset:0;
+  display:flex;align-items:center;justify-content:center;
+  background:rgba(0,0,0,0.55);
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+.result-ov.show{opacity:1}
+.result-box{
+  padding:12px 24px;border-radius:6px;text-align:center;border:1px solid;
+}
+.rb-green{background:rgba(15,80,40,0.92);border-color:#2a7a4a}
+.rb-amber{background:rgba(80,50,0,0.92);border-color:#c4903a}
+.rb-red{background:rgba(80,15,15,0.92);border-color:#b84444}
+.rb-title{font-size:13px;font-weight:600;color:#fff;margin-top:4px}
+.rb-sub{font-size:10px;font-family:var(--mono);color:rgba(255,255,255,0.55);margin-top:3px}
+
+/* BARRAS DE CONFIANZA */
+.conf-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.conf-row:last-child{margin-bottom:0}
+.conf-label{font-size:11px;color:var(--muted);min-width:80px;font-family:var(--mono)}
+.conf-track{flex:1;height:2px;background:var(--border);border-radius:99px;overflow:hidden}
+.conf-fill{height:100%;border-radius:99px;transition:width .12s}
+.cf-g{background:var(--green)}
+.cf-a{background:var(--amber)}
+.cf-r{background:var(--red)}
+.conf-pct{font-size:10px;font-family:var(--mono);min-width:26px;text-align:right}
+.cp-g{color:var(--green)}.cp-a{color:var(--amber)}.cp-r{color:var(--red)}
+
+/* BOTÓN */
+.btn-sys{
+  display:block;width:calc(100% - 28px);margin:10px 14px;
+  padding:8px 0;text-align:center;
+  background:var(--text);color:var(--surface);
+  border:none;border-radius:5px;cursor:pointer;
+  font-family:var(--font);font-size:12px;font-weight:500;
+  letter-spacing:0.02em;transition:opacity .2s;
+}
+.btn-sys:hover{opacity:.82}
+.btn-sys:disabled{opacity:.35;cursor:not-allowed}
+
+/* MINI CHART */
+.chart-wrap{display:flex;align-items:flex-end;gap:2px;height:44px;margin-top:6px}
+.bc{flex:1;border-radius:2px 2px 0 0;min-height:2px;transition:height .3s,background .3s}
+
+/* LOG */
+.log-wrap{flex:1;overflow-y:auto;padding:0 16px 12px}
+.log-wrap::-webkit-scrollbar{width:2px}
+.log-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:99px}
+.log-item{
+  display:flex;align-items:center;gap:8px;
+  padding:8px 0;border-bottom:1px solid var(--border);
+  animation:slin .2s ease-out;
+}
+@keyframes slin{from{transform:translateX(8px);opacity:0}to{transform:translateX(0);opacity:1}}
+.log-item:last-child{border-bottom:none}
+.ldot{width:5px;height:5px;border-radius:50%;flex-shrink:0}
+.ld-g{background:var(--green)}.ld-a{background:var(--amber)}.ld-r{background:var(--red)}
+.l-nom{font-size:12px;font-weight:500;color:var(--text)}
+.l-time{font-size:10px;font-family:var(--mono);color:var(--hint);margin-top:1px}
+.lbadge{
+  margin-left:auto;font-size:9px;font-family:var(--mono);
+  padding:2px 6px;border-radius:3px;letter-spacing:0.05em;
+}
+.lb-g{background:var(--green-bg);color:var(--green);border:1px solid var(--green-bd)}
+.lb-a{background:var(--amber-bg);color:var(--amber);border:1px solid var(--amber-bd)}
+.lb-r{background:var(--red-bg);color:var(--red);border:1px solid var(--red-bd)}
+.empty{font-family:var(--mono);font-size:10px;color:var(--hint);padding:16px 0;text-align:center}
+
+/* DESGLOSE */
+.desglose-row{
+  display:flex;align-items:center;justify-content:space-between;
+  padding:5px 0;border-bottom:1px solid var(--border);font-size:11px;
+}
+.desglose-row:last-child{border-bottom:none}
+.dr-label{color:var(--muted)}
+.dr-val{font-family:var(--mono);font-weight:500;color:var(--text)}
+.dr-val.green{color:var(--green)}.dr-val.amber{color:var(--amber)}.dr-val.red{color:var(--red)}
+
+/* ÚLTIMO ACCESO */
+.ultimo-card{
+  margin:0 16px;padding:10px 12px;
+  border:1px solid var(--border2);border-radius:6px;
+  background:var(--bg);
+}
+.uc-status{font-size:11px;font-weight:500;margin-bottom:4px}
+.uc-name{font-size:15px;font-weight:500;letter-spacing:-0.01em}
+.uc-time{font-size:10px;font-family:var(--mono);color:var(--hint);margin-top:2px}
+.uc-bar{margin-top:8px;height:2px;border-radius:99px;width:100%;background:var(--border);overflow:hidden}
+.uc-bar-fill{height:100%;border-radius:99px;transition:width .3s}
+.uc-conf{font-size:10px;font-family:var(--mono);color:var(--muted);margin-top:4px}
+
+/* FOOTER */
+.footer{
+  padding:6px 16px;border-top:1px solid var(--border);
+  display:flex;align-items:center;justify-content:space-between;
+  background:var(--surface);
+}
+.f-txt{font-size:10px;font-family:var(--mono);color:var(--hint)}
+</style>
+</head>
+<body>
+
+<header class="hdr">
+  <span class="hdr-logo">ClubManager</span>
+  <div class="hdr-sep"></div>
+  <span class="hdr-sub">Control de acceso — IA</span>
+  <div class="hdr-right">
+    <span class="pill" id="status-pill"><span class="dot"></span><span id="status-txt">Inactivo</span></span>
+    <span class="hdr-clock" id="clock">--:--:--</span>
+  </div>
+</header>
+
+<div class="layout">
+
+  <!-- COLUMNA IZQUIERDA: MÉTRICAS -->
+  <div class="col-left">
+
+    <div class="stat-big">
+      <div class="stat-big-num green" id="cnt-v">0</div>
+      <div class="stat-big-lbl">Accesos permitidos</div>
+      <div class="rate-row">
+        <div class="rate-bar-wrap"><div class="rate-bar" id="rate-v" style="width:0%;background:var(--green)"></div></div>
+        <div class="rate-num" id="rpct-v">0%</div>
+      </div>
+    </div>
+
+    <div class="stat-big">
+      <div class="stat-big-num amber" id="cnt-e">0</div>
+      <div class="stat-big-lbl">Carnets vencidos</div>
+      <div class="rate-row">
+        <div class="rate-bar-wrap"><div class="rate-bar" id="rate-e" style="width:0%;background:var(--amber)"></div></div>
+        <div class="rate-num" id="rpct-e">0%</div>
+      </div>
+    </div>
+
+    <div class="stat-big">
+      <div class="stat-big-num red" id="cnt-s">0</div>
+      <div class="stat-big-lbl">Accesos denegados</div>
+      <div class="rate-row">
+        <div class="rate-bar-wrap"><div class="rate-bar" id="rate-s" style="width:0%;background:var(--red)"></div></div>
+        <div class="rate-num" id="rpct-s">0%</div>
+      </div>
+    </div>
+
+    <div class="stat-big" style="border-bottom:none">
+      <div class="stat-big-num blue" id="cnt-t">0</div>
+      <div class="stat-big-lbl">Total detectados hoy</div>
+    </div>
+
+    <div class="sec" style="margin-top:auto">
+      <div class="sec-title">Desglose del modelo</div>
+      <div class="desglose-row">
+        <span class="dr-label">Umbral de confianza</span>
+        <span class="dr-val">80%</span>
+      </div>
+      <div class="desglose-row">
+        <span class="dr-label">Clases entrenadas</span>
+        <span class="dr-val" id="d-clases">—</span>
+      </div>
+      <div class="desglose-row">
+        <span class="dr-label">Motor</span>
+        <span class="dr-val">TM v2 + TF.js</span>
+      </div>
+      <div class="desglose-row">
+        <span class="dr-label">Tasa de acierto</span>
+        <span class="dr-val green" id="d-tasa">—</span>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA CENTRAL: CÁMARA + CONTROLES -->
+  <div class="col-center">
+
+    <div class="cam-header">
+      <span class="cam-lbl-txt">CAM-01</span>
+      <div style="width:1px;height:10px;background:var(--border2)"></div>
+      <span class="cam-lbl-txt" id="cam-res">—</span>
+      <span class="cam-status-lbl off" id="cam-status-lbl">Offline</span>
+    </div>
+
+    <div class="cam-wrap" id="cam-wrap">
+      <div id="webcam-container">
+        <div class="cam-ghost-txt">
+          <span class="cam-ghost-icon">⬛</span>
+          Sin señal
+        </div>
+      </div>
+      <div class="scan-ln" id="scan-ln"></div>
+      <div class="result-ov" id="result-ov">
+        <div class="result-box" id="result-box">
+          <div id="rb-title" class="rb-title"></div>
+          <div id="rb-sub" class="rb-sub"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barras de confianza en tiempo real -->
+    <div class="sec">
+      <div class="sec-title">Confianza en tiempo real</div>
+      <div class="conf-row">
+        <div class="conf-label">válido</div>
+        <div class="conf-track"><div class="conf-fill cf-g" id="bar-v" style="width:0%"></div></div>
+        <div class="conf-pct cp-g" id="pct-v">0%</div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-label">vencido</div>
+        <div class="conf-track"><div class="conf-fill cf-a" id="bar-e" style="width:0%"></div></div>
+        <div class="conf-pct cp-a" id="pct-e">0%</div>
+      </div>
+      <div class="conf-row">
+        <div class="conf-label">sin carnet</div>
+        <div class="conf-track"><div class="conf-fill cf-r" id="bar-s" style="width:0%"></div></div>
+        <div class="conf-pct cp-r" id="pct-s">0%</div>
+      </div>
+    </div>
+
+    <button class="btn-sys" id="btn-sys" onclick="initSistema()">Iniciar sistema</button>
+
+    <!-- Último acceso -->
+    <div class="sec" style="padding-bottom:10px">
+      <div class="sec-title">Último acceso detectado</div>
+    </div>
+    <div class="ultimo-card" id="ultimo-card" style="display:none">
+      <div class="uc-status" id="uc-status"></div>
+      <div class="uc-name" id="uc-name"></div>
+      <div class="uc-time" id="uc-time"></div>
+      <div class="uc-bar"><div class="uc-bar-fill" id="uc-bar-fill" style="width:0%"></div></div>
+      <div class="uc-conf" id="uc-conf"></div>
+    </div>
+    <div id="ultimo-empty" class="empty" style="padding:10px 16px">Sin registros aún</div>
+
+    <div class="footer" style="margin-top:auto">
+      <span class="f-txt" id="f-modelo">Modelo: no cargado</span>
+      <span class="f-txt" id="f-fps">— fps</span>
+    </div>
+
+  </div>
+
+  <!-- COLUMNA DERECHA: LOG -->
+  <div class="col-right">
+
+    <div class="sec">
+      <div class="sec-title">Actividad reciente</div>
+      <div class="chart-wrap" id="mini-chart"></div>
+    </div>
+
+    <div class="sec" style="padding-bottom:8px">
+      <div class="sec-title">Log de accesos</div>
+    </div>
+
+    <div class="log-wrap" id="log-list">
+      <div class="empty">Sin registros.<br>Inicia el sistema.</div>
+    </div>
+
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+<script>
+/*
+  ============================================================
+  ClubManager — Control de Acceso
+  Teachable Machine + TensorFlow.js
+
+  CONFIGURACIÓN:
+  - Coloca tu modelo entrenado en la carpeta: ./modelo_carnet/
+    Archivos requeridos: model.json, metadata.json, weights.bin
+  - Ajusta MODEL_URL si usas otra ruta o URL remota
+  - Ajusta CONFIDENCE_THRESHOLD para cambiar la sensibilidad
+  ============================================================
+*/
+
+const MODEL_URL = "./modelo_carnet/";
+const CONFIDENCE_THRESHOLD = 0.80;
+
+let model, webcam, maxPredictions;
+let accessLog = [];
+let cnts = { carnet_valido: 0, carnet_vencido: 0, sin_carnet: 0 };
+let lastClase = "", ovTimer = null;
+let chartData = new Array(20).fill(null);
+let fpsCount = 0, fpsLast = Date.now();
+
+const NOMBRES = [
+  'Carlos Ríos','María López','Juan Pérez','Ana Torres','Roberto G.',
+  'Luis Mamani','Sofía Cruz','Diego Paredes','Elena Quispe','Marco Vega'
+];
+
+/* RELOJ */
+function tick() {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('es-PE');
+}
+setInterval(tick, 1000); tick();
+
+/* SONIDOS */
+const AC = window.AudioContext || window.webkitAudioContext;
+let actx;
+function beep(f, d, t = 'sine', v = 0.2) {
+  if (!actx) actx = new AC();
+  const o = actx.createOscillator(), g = actx.createGain();
+  o.connect(g); g.connect(actx.destination);
+  o.type = t; o.frequency.value = f;
+  g.gain.setValueAtTime(v, actx.currentTime);
+  g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + d);
+  o.start(); o.stop(actx.currentTime + d);
+}
+function sndOk()   { beep(880, .1); setTimeout(() => beep(1108, .15), 130); }
+function sndNo()   { beep(200, .25, 'sawtooth', .15); }
+function sndWarn() { beep(440, .15, 'triangle'); setTimeout(() => beep(330, .15, 'triangle'), 170); }
+
+/* MINI CHART */
+function buildChart() {
+  const c = document.getElementById('mini-chart'); c.innerHTML = '';
+  for (let i = 0; i < 20; i++) {
+    const d = document.createElement('div');
+    d.className = 'bc';
+    d.style.height = '2px';
+    d.style.background = 'var(--border)';
+    c.appendChild(d);
+  }
+}
+buildChart();
+
+function updateChart() {
+  const cols = document.querySelectorAll('.bc');
+  const clr = {
+    carnet_valido: 'var(--green)',
+    carnet_vencido: 'var(--amber)',
+    sin_carnet: 'var(--red)'
+  };
+  chartData.forEach((d, i) => {
+    if (!cols[i]) return;
+    if (!d) { cols[i].style.height = '2px'; cols[i].style.background = 'var(--border)'; }
+    else { cols[i].style.height = d.v + '%'; cols[i].style.background = clr[d.c] || 'var(--border)'; }
+  });
+}
+
+/* ESTADÍSTICAS */
+function updateStats() {
+  const total = cnts.carnet_valido + cnts.carnet_vencido + cnts.sin_carnet;
+  document.getElementById('cnt-v').textContent = cnts.carnet_valido;
+  document.getElementById('cnt-e').textContent = cnts.carnet_vencido;
+  document.getElementById('cnt-s').textContent = cnts.sin_carnet;
+  document.getElementById('cnt-t').textContent = total;
+  if (total > 0) {
+    const rv = Math.round(cnts.carnet_valido / total * 100);
+    const re = Math.round(cnts.carnet_vencido / total * 100);
+    const rs = Math.round(cnts.sin_carnet / total * 100);
+    document.getElementById('rate-v').style.width = rv + '%';
+    document.getElementById('rate-e').style.width = re + '%';
+    document.getElementById('rate-s').style.width = rs + '%';
+    document.getElementById('rpct-v').textContent = rv + '%';
+    document.getElementById('rpct-e').textContent = re + '%';
+    document.getElementById('rpct-s').textContent = rs + '%';
+    document.getElementById('d-tasa').textContent = rv + '%';
+  }
+}
+
+/* INICIALIZAR */
+async function initSistema() {
+  const btn = document.getElementById('btn-sys');
+  btn.disabled = true;
+  btn.textContent = 'Cargando modelo…';
+  try {
+    model = await tmImage.load(MODEL_URL + "model.json", MODEL_URL + "metadata.json");
+    maxPredictions = model.getTotalClasses();
+
+    webcam = new tmImage.Webcam(640, 480, true);
+    await webcam.setup();
+    await webcam.play();
+
+    const c = document.getElementById('webcam-container');
+    c.innerHTML = ''; c.appendChild(webcam.canvas);
+
+    document.getElementById('scan-ln').classList.add('active');
+    document.getElementById('status-pill').className = 'pill on';
+    document.getElementById('status-txt').textContent = 'En línea';
+    document.getElementById('cam-status-lbl').textContent = 'Live';
+    document.getElementById('cam-status-lbl').className = 'cam-status-lbl on';
+    document.getElementById('cam-res').textContent = '640×480';
+    document.getElementById('d-clases').textContent = maxPredictions;
+    document.getElementById('f-modelo').textContent = 'TM v2 · ' + maxPredictions + ' clases';
+    btn.style.display = 'none';
+
+    window.requestAnimationFrame(loop);
+  } catch (e) {
+    btn.disabled = false;
+    btn.textContent = 'Iniciar sistema';
+    alert('No se pudo cargar el modelo.\nVerifica que la carpeta modelo_carnet/ existe y contiene model.json, metadata.json y weights.bin.');
+  }
+}
+
+/* LOOP PRINCIPAL */
+async function loop() {
+  webcam.update();
+  await predecir();
+  fpsCount++;
+  const now = Date.now();
+  if (now - fpsLast >= 1000) {
+    document.getElementById('f-fps').textContent = fpsCount + ' fps';
+    fpsCount = 0; fpsLast = now;
+  }
+  window.requestAnimationFrame(loop);
+}
+
+/* PREDICCIÓN */
+async function predecir() {
+  const pred = await model.predict(webcam.canvas);
+  let maxP = 0, claseD = '';
+  pred.forEach(p => { if (p.probability > maxP) { maxP = p.probability; claseD = p.className; } });
+
+  const map = [
+    { clase: 'carnet_valido',  id: 'v' },
+    { clase: 'carnet_vencido', id: 'e' },
+    { clase: 'sin_carnet',     id: 's' },
+  ];
+  pred.forEach((p, i) => {
+    if (!map[i]) return;
+    const pct = Math.round(p.probability * 100);
+    document.getElementById('bar-' + map[i].id).style.width = pct + '%';
+    document.getElementById('pct-' + map[i].id).textContent = pct + '%';
+  });
+
+  if (maxP > CONFIDENCE_THRESHOLD && claseD !== lastClase) {
+    lastClase = claseD;
+    mostrar(claseD, maxP);
+  }
+}
+
+/* MOSTRAR RESULTADO */
+function mostrar(clase, prob) {
+  const cfg = {
+    carnet_valido: {
+      title: 'Acceso permitido',
+      sub: 'Carnet válido · ' + Math.round(prob * 100) + '% confianza',
+      bCls: 'rb-green', dot: 'ld-g', badge: 'lb-g', lbl: 'Válido',
+      snd: sndOk, ucColor: 'var(--green)', ucStatus: 'Carnet válido'
+    },
+    carnet_vencido: {
+      title: 'Consultar recepción',
+      sub: 'Membresía vencida · ' + Math.round(prob * 100) + '% confianza',
+      bCls: 'rb-amber', dot: 'ld-a', badge: 'lb-a', lbl: 'Vencido',
+      snd: sndWarn, ucColor: 'var(--amber)', ucStatus: 'Carnet vencido'
+    },
+    sin_carnet: {
+      title: 'Acceso denegado',
+      sub: 'Sin carnet · ' + Math.round(prob * 100) + '% confianza',
+      bCls: 'rb-red', dot: 'ld-r', badge: 'lb-r', lbl: 'Denegado',
+      snd: sndNo, ucColor: 'var(--red)', ucStatus: 'Sin carnet'
+    },
+  };
+  const c = cfg[clase]; if (!c) return;
+
+  document.getElementById('result-box').className = 'result-box ' + c.bCls;
+  document.getElementById('rb-title').textContent = c.title;
+  document.getElementById('rb-sub').textContent = c.sub;
+  const ov = document.getElementById('result-ov');
+  ov.classList.add('show'); c.snd();
+  if (ovTimer) clearTimeout(ovTimer);
+  ovTimer = setTimeout(() => ov.classList.remove('show'), 2200);
+
+  cnts[clase] = (cnts[clase] || 0) + 1;
+  updateStats();
+
+  chartData.shift();
+  chartData.push({ c: clase, v: Math.round(Math.random() * 50 + 20) });
+  updateChart();
+
+  const nom = NOMBRES[Math.floor(Math.random() * NOMBRES.length)];
+  const hora = new Date().toLocaleTimeString('es-PE');
+
+  document.getElementById('ultimo-card').style.display = 'block';
+  document.getElementById('ultimo-empty').style.display = 'none';
+  document.getElementById('uc-status').textContent = c.ucStatus;
+  document.getElementById('uc-status').style.color = c.ucColor;
+  document.getElementById('uc-name').textContent = nom;
+  document.getElementById('uc-time').textContent = hora;
+  document.getElementById('uc-bar-fill').style.width = Math.round(prob * 100) + '%';
+  document.getElementById('uc-bar-fill').style.background = c.ucColor;
+  document.getElementById('uc-conf').textContent = 'Confianza: ' + Math.round(prob * 100) + '%';
+
+  accessLog.unshift({ nom, hora, dot: c.dot, badge: c.badge, lbl: c.lbl });
+  if (accessLog.length > 40) accessLog.pop();
+  renderLog();
+}
+
+/* RENDERIZAR LOG */
+function renderLog() {
+  const el = document.getElementById('log-list');
+  if (!accessLog.length) { el.innerHTML = '<div class="empty">Sin registros.</div>'; return; }
+  el.innerHTML = accessLog.map(l => `
+    <div class="log-item">
+      <div class="ldot ${l.dot}"></div>
+      <div style="flex:1">
+        <div class="l-nom">${l.nom}</div>
+        <div class="l-time">${l.hora}</div>
+      </div>
+      <span class="lbadge ${l.badge}">${l.lbl}</span>
+    </div>
+  `).join('');
+}
+</script>
+</body>
+</html>
